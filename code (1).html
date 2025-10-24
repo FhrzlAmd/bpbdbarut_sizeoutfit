@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>bpbdbarut_sizeoutfit</title>  <!-- Nama link website diubah di sini -->
+    <!-- Library untuk export Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        form {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #exportBtn {
+            background-color: #007BFF;
+        }
+        #exportBtn:hover {
+            background-color: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        #summary {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        #summary h2 {
+            margin-top: 0;
+        }
+        .size-summary {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>BPBD BARITO UTARA</h1>
+    
+    <!-- Form Input -->
+    <form id="dataForm">
+        <label for="namaLengkap">NAMA LENGKAP:</label>
+        <input type="text" id="namaLengkap" required>
+        
+        <label for="namaPanggilan">NAMA PANGGILAN:</label>
+        <input type="text" id="namaPanggilan" required>
+        
+        <label for="ukuranSepatu">UKURAN SEPATU (angka):</label>
+        <input type="number" id="ukuranSepatu" min="1" required>
+        
+        <label for="ukuranBaju">UKURAN BAJU:</label>
+        <select id="ukuranBaju" required>
+            <option value="">Pilih Ukuran</option>
+            <option value="S">S</option>
+            <option value="M">M</option>
+            <option value="L">L</option>
+            <option value="XL">XL</option>
+            <option value="XXL">XXL</option>
+            <option value="XXXL">XXXL</option>
+            <option value="XXXXL">XXXXL</option>
+        </select>
+        
+        <label for="ukuranCelana">UKURAN CELANA (25-38, scroll untuk pilih):</label>
+        <select id="ukuranCelana" required>
+            <option value="">Pilih Ukuran</option>
+            <option value="25">25</option>
+            <option value="26">26</option>
+            <option value="27">27</option>
+            <option value="28">28</option>
+            <option value="29">29</option>
+            <option value="30">30</option>
+            <option value="31">31</option>
+            <option value="32">32</option>
+            <option value="33">33</option>
+            <option value="34">34</option>
+            <option value="35">35</option>
+            <option value="36">36</option>
+            <option value="37">37</option>
+            <option value="38">38</option>
+        </select>
+        
+        <button type="submit">Tambah Data</button>
+    </form>
+    
+    <!-- Tabel Data -->
+    <h2>Data Rekap</h2>
+    <table id="dataTable">
+        <thead>
+            <tr>
+                <th>NAMA LENGKAP</th>
+                <th>NAMA PANGGILAN</th>
+                <th>UKURAN SEPATU</th>
+                <th>UKURAN BAJU</th>
+                <th>UKURAN CELANA</th>
+            </tr>
+        </thead>
+        <tbody id="dataBody">
+            <!-- Data akan ditambahkan di sini -->
+        </tbody>
+    </table>
+    
+    <!-- Tombol Export -->
+    <button id="exportBtn">Export ke Excel</button>
+    
+    <!-- Ringkasan Total -->
+    <div id="summary">
+        <h2>Ringkasan Total</h2>
+        <p><strong>Total Nama Panggilan (Jumlah Orang):</strong> <span id="totalPanggilan">0</span></p>
+        <div class="size-summary">
+            <strong>Total Ukuran Sepatu:</strong>
+            <div id="totalSepatu"></div>
+        </div>
+        <div class="size-summary">
+            <strong>Total Ukuran Baju:</strong>
+            <div id="totalBaju"></div>
+        </div>
+        <div class="size-summary">
+            <strong>Total Ukuran Celana:</strong>
+            <div id="totalCelana"></div>
+        </div>
+    </div>
+    
+    <script>
+        // Array untuk menyimpan data
+        let dataRekap = [];
+        
+        // Elemen DOM
+        const form = document.getElementById('dataForm');
+        const dataBody = document.getElementById('dataBody');
+        const totalPanggilan = document.getElementById('totalPanggilan');
+        const totalSepatu = document.getElementById('totalSepatu');
+        const totalBaju = document.getElementById('totalBaju');
+        const totalCelana = document.getElementById('totalCelana');
+        const exportBtn = document.getElementById('exportBtn');
+        
+        // Fungsi untuk menambah data dengan validasi duplikasi
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Ambil nilai dari form
+            const namaLengkap = document.getElementById('namaLengkap').value.trim();
+            const namaPanggilan = document.getElementById('namaPanggilan').value.trim();
+            const ukuranSepatu = parseInt(document.getElementById('ukuranSepatu').value);
+            const ukuranBaju = document.getElementById('ukuranBaju').value;
+            const ukuranCelana = document.getElementById('ukuranCelana').value;
+            
+            // Validasi sederhana
+            if (!namaLengkap || !namaPanggilan || isNaN(ukuranSepatu) || !ukuranBaju || !ukuranCelana) {
+                alert('Semua field harus diisi dengan benar!');
+                return;
+            }
+            
+            // Validasi duplikasi nama (case-insensitive)
+            const isDuplicate = dataRekap.some(item => 
+                item.namaLengkap.toLowerCase() === namaLengkap.toLowerCase() || 
+                item.namaPanggilan.toLowerCase() === namaPanggilan.toLowerCase()
+            );
+            if (isDuplicate) {
+                alert('NAMA SUDAH ADA');
+                return;
+            }
+            
+            // Tambah ke array
+            dataRekap.push({
+                namaLengkap,
+                namaPanggilan,
+                ukuranSepatu,
+                ukuranBaju,
+                ukuranCelana
+            });
+            
+            // Reset form
+            form.reset();
+            
+            // Update tampilan
+            updateTable();
+            updateSummary();
+        });
+        
+        // Fungsi untuk update tabel
+        function updateTable() {
+            dataBody.innerHTML = '';
+            dataRekap.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.namaLengkap}</td>
+                    <td>${item.namaPanggilan}</td>
+                    <td>${item.ukuranSepatu}</td>
+                    <td>${item.ukuranBaju}</td>
+                    <td>${item.ukuranCelana}</td>
+                `;
+                dataBody.appendChild(row);
+            });
+        }
+        
+        // Fungsi untuk update ringkasan total
+        function updateSummary() {
+            // Total nama panggilan (jumlah orang)
+            totalPanggilan.textContent = dataRekap.length;
+            
+            // Hitung frekuensi ukuran sepatu
+            const sepatuCount = {};
+            dataRekap.forEach(item => {
+                sepatuCount[item.ukuranSepatu] = (sepatuCount[item.ukuranSepatu] || 0) + 1;
+            });
+            totalSepatu.innerHTML = Object.entries(sepatuCount).map(([size, count]) => `${size}: ${count} orang`).join('<br>');
+            
+            // Hitung frekuensi ukuran baju
+            const bajuCount = {};
+            dataRekap.forEach(item => {
+                bajuCount[item.ukuranBaju] = (bajuCount[item.ukuranBaju] || 0) + 1;
+            });
+            totalBaju.innerHTML = Object.entries(bajuCount).map(([size, count]) => `${size}: ${count} orang`).join('<br>');
+            
+            // Hitung frekuensi ukuran celana
+            const celanaCount = {};
+            dataRekap.forEach(item => {
+                celanaCount[item.ukuranCelana] = (celanaCount[item.ukuranCelana] || 0) + 1;
+            });
+            totalCelana.innerHTML = Object.entries(celanaCount).map(([size, count]) => `${size}: ${count} orang`).join('<br>');
+        }
+        
+        // Fungsi untuk export ke Excel
+        exportBtn.addEventListener('click', function() {
+            if (dataRekap.length === 0) {
+                alert('Tidak ada data untuk diexport');
+                return;
+            }
+            
+            // Buat workbook
+            const wb = XLSX.utils.book_new();
+            
+            // Sheet 1: Data Rekap
+            const wsData = XLSX.utils.json_to_sheet(dataRekap, {
+                header: ['namaLengkap', 'namaPanggilan', 'ukuranSepatu', 'ukuranBaju', 'ukuranCelana']
+            });
+            XLSX.utils.book_append_sheet(wb, wsData, 'Data Rekap');
+            
+            // Sheet 2: Ringkasan Total
+            const summaryData = [
+                { Kategori: 'Total Nama Panggilan (Jumlah Orang)', Nilai: dataRekap.length }
+            ];
+            
+            // Tambah frekuensi sepatu
+            const sepatuCount = {};
+            dataRekap.forEach(item => {
+                sepatuCount[item.ukuranSepatu] = (sepatuCount[item.ukuranSepatu] || 0) + 1;
+            });
+            Object.entries(sepatuCount).forEach(([size, count]) => {
+                summaryData.push({ Kategori: `Ukuran Sepatu ${size}`, Nilai: `${count} orang` });
+            });
+            
+            // Tambah frekuensi baju
+            const bajuCount = {};
+            dataRekap.forEach(item => {
+                bajuCount[item.ukuranBaju] = (bajuCount[item.ukuranBaju] || 0) + 1;
+            });
+            Object.entries(bajuCount).forEach(([size, count]) => {
+                summaryData.push({ Kategori: `Ukuran Baju ${size}`, Nilai: `${count} orang` });
+            });
+            
+            // Tambah frekuensi celana
+            const celanaCount = {};
+            dataRekap.forEach(item => {
+                celanaCount[item.ukuranCelana] = (celanaCount[item.ukuranCelana] || 0) + 1;
+            });
+            Object.entries(celanaCount).forEach(([size, count]) => {
+                summaryData.push({ Kategori: `Ukuran Celana ${size}`, Nilai: `${count} orang` });
+            });
+            
+            const wsSummary = XLSX.utils.json_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, wsSummary, 'Ringkasan Total');
+            
+            // Download file
+            XLSX.writeFile(wb, 'Rekap_BPBD_Barito_Utara.xlsx');
+        });
+    </script>
+</body>
+</html>
